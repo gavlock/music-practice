@@ -1,0 +1,5 @@
+.bigNote {
+    border: thin solid black;
+    font-size: xxx-large;
+    min-height: 3ex;
+}
