@@ -1,12 +1,19 @@
+import Music from './lib/music.mjs';
+
+const dbg = window.dbg = {};
+dbg.Music = Music;
 
 $( () => {
 	const notesToPractice = ['C4', 'G4', 'C5', 'F5'];
 
 	function start() {
 		const selectedNoteIndex = Math.floor(Math.random() * notesToPractice.length);
-		const selectedNote = notesToPractice[selectedNoteIndex];
-		
-		//$('#requestedNote').text(selectedNote);
+		const selectedNote = new Music.Note(notesToPractice[selectedNoteIndex]);
+		console.log(selectedNote);
+
+		const staff = (selectedNote >= Music.Note.middleC) ? new Music.TrebleStaff() : new Music.BassStaff();
+		dbg.staff = staff;
+		//staff.addNote(selectedNote);
 
 		const gClef = '\uE050';
 		const staff5Lines = '\uE014';
