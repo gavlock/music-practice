@@ -10,33 +10,23 @@ $( () => {
 	function start() {
 		const selectedNoteIndex = Math.floor(Math.random() * notesToPractice.length);
 		const selectedNote = new Music.Note(notesToPractice[selectedNoteIndex]);
-		console.log(selectedNote);
 
-		const staff = new Music.TrebleStaff();
+		const staff = (selectedNote >= Music.Note.middleC) ? new Music.TrebleStaff() : new Music.BassStaff();
 		dbg.staff = staff;
+		staff.addNote(selectedNote);
 
-		staff.addNote('E4');
-		staff.addNote('G4');
-		staff.addNote('B4');
-		staff.addNote('D5');
-		staff.addNote('F5');
-
-		staff.addNote('F4');
-		staff.addNote('A♭4');
-		staff.addNote('C#5');
-		staff.addNote('E♮5');
-
-		staff.addNote('A3');
-		staff.addNote('B3');
-		staff.addNote('C4');
-		staff.addNote('D4');
-
-		//const staff = (selectedNote >= Music.Note.middleC) ? new Music.TrebleStaff() : new Music.BassStaff();
-		//dbg.staff = staff;
-		//staff.addNote(selectedNote);
-
-		const staffCanvas = new StaffCanvas($('#requestedNote')[0]);
+		const canvas = $('#requestedNote')[0];
+		const staffCanvas = new StaffCanvas(canvas);
 		staffCanvas.render(staff);
+
+		{
+			const ctx = canvas.getContext('2d');
+			const size = staffCanvas.fontSize;
+			ctx.font = size + 'px sans-serif';
+			ctx.textBaseline = 'middle';
+			ctx.textAlign = 'right';
+			ctx.fillText(selectedNote.name, canvas.width - staffCanvas.margin, canvas.height / 2);
+		}
 	}
 
 	function init() {
