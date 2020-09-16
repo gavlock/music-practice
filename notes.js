@@ -1,5 +1,6 @@
 import Music from './lib/music.mjs';
 import StaffCanvas from './lib/staffCanvas.mjs';
+import NoteListener from './lib/noteListener.mjs';
 
 const dbg = window.dbg = {};
 dbg.Music = Music;
@@ -8,6 +9,8 @@ $( () => {
 
 	class Session {
 		constructor(audioStream) {
+			this.listener = new NoteListener(audioStream, this.onListen.bind(this));
+
 			this.notesToPractice = ['C3', 'F3', 'C4', 'G4', 'C5'];
 			this.lastNoteIndex = null;
 			this.nextChallenge();
@@ -41,6 +44,17 @@ $( () => {
 				ctx.textAlign = 'right';
 				ctx.fillText(selectedNote.name, canvas.width - staffCanvas.margin, canvas.height / 2);
 			}
+		}
+
+		onListen(note) {
+			const canvas = $('#detectedNote')[0];
+			const ctx = canvas.getContext('2d');
+			ctx.font = '40px sans-serif';
+			ctx.textBaseline = 'middle';
+			ctx.textAlign = 'center';
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			if (note)
+				ctx.fillText(note.name, canvas.width / 2, canvas.height / 2);
 		}
 	}
 
