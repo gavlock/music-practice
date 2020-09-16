@@ -1,5 +1,11 @@
+@font-face {
+    font-family: Bravura;
+    src: local("Bravura"),
+	 url("resources/bravura/Bravura.woff2") format("woff2"),
+	 url("resources/bravura/Bravura.woff")  format("woff");
+}
+
 .bigNote {
     border: thin solid black;
-    font-size: xxx-large;
     min-height: 3ex;
 }
