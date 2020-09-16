@@ -5,36 +5,69 @@ const dbg = window.dbg = {};
 dbg.Music = Music;
 
 $( () => {
-	const notesToPractice = ['C3', 'F3', 'C4', 'G4', 'C5'];
 
-	function start() {
-		const selectedNoteIndex = Math.floor(Math.random() * notesToPractice.length);
-		const selectedNote = new Music.Note(notesToPractice[selectedNoteIndex]);
+	class Session {
+		constructor(audioStream) {
+			this.notesToPractice = ['C3', 'F3', 'C4', 'G4', 'C5'];
+			this.lastNoteIndex = null;
+			this.nextChallenge();
+		}
 
-		const staff = (selectedNote >= Music.Note.middleC) ? new Music.TrebleStaff() : new Music.BassStaff();
-		dbg.staff = staff;
-		staff.addNote(selectedNote);
+		pickNextNote() {
+			let nextNoteIndex;
+			do {
+				nextNoteIndex = Math.floor(Math.random() * this.notesToPractice.length);
+			} while (nextNoteIndex == this.lastNoteIndex);
+			this.lastNoteIndex = nextNoteIndex;
+			return new Music.Note(this.notesToPractice[nextNoteIndex]);
+		}
 
-		const canvas = $('#requestedNote')[0];
-		const staffCanvas = new StaffCanvas(canvas);
-		staffCanvas.render(staff);
+		nextChallenge () {
+			const selectedNote = this.pickNextNote();
 
-		{
-			const ctx = canvas.getContext('2d');
-			const size = staffCanvas.fontSize;
-			ctx.font = size + 'px sans-serif';
-			ctx.textBaseline = 'middle';
-			ctx.textAlign = 'right';
-			ctx.fillText(selectedNote.name, canvas.width - staffCanvas.margin, canvas.height / 2);
+			const staff = (selectedNote >= Music.Note.middleC) ? new Music.TrebleStaff() : new Music.BassStaff();
+			dbg.staff = staff;
+			staff.addNote(selectedNote);
+
+			const canvas = $('#requestedNote')[0];
+			const staffCanvas = new StaffCanvas(canvas);
+			staffCanvas.render(staff);
+
+			{
+				const ctx = canvas.getContext('2d');
+				const size = staffCanvas.fontSize;
+				ctx.font = size + 'px sans-serif';
+				ctx.textBaseline = 'middle';
+				ctx.textAlign = 'right';
+				ctx.fillText(selectedNote.name, canvas.width - staffCanvas.margin, canvas.height / 2);
+			}
 		}
 	}
 
-	function init() {
-		const startButton = $('#start');
-		startButton.click( start );
-		startButton.prop('disabled', false);
+	function startSession(audioStream) {
+		console.log('Starting session');
 
-		start();
+		$('#start').prop('disabled', true);
+
+		const session = new Session(audioStream);
+
+		$('#next')
+			.click( () => { session.nextChallenge(); } )
+			.prop('disabled', false);
+	}
+
+	function onStart() {
+		console.log('Requesting audio');
+
+		navigator.mediaDevices.getUserMedia( {audio: true} )
+			.then( (audioStream) => startSession(audioStream) )
+			.catch( (error) => console.log('getUserMedia error: ' + error) );
+	}
+
+	function init() {
+		$('#start')
+			.click( onStart )
+			.prop('disabled', false);
 	}
 
 	document.fonts.load('40pt Bravura').then(init);
