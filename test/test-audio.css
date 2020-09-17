@@ -1,0 +1,16 @@
+#log {
+    border: thin solid grey;
+}
+
+figure {
+    width:600px;
+    border: thin solid grey;
+}
+
+figcaption {
+  background-color: black;
+  color: white;
+  font-style: italic;
+  padding: 2px;
+  text-align: center;
+}

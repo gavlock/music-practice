@@ -1,0 +1,31 @@
+<html>
+
+  <head>
+    <title>Test Audio - Music Practice</title>
+    <link rel="stylesheet" type="text/css" href="test-audio.css"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="module" src="test-audio.js"></script>
+  </head>
+
+  <body>
+    <h1>Test Audio</h1>
+
+    <div id="settings">
+      <input type="checkbox" id="localEcho"/>
+      <label for="localEcho">Local echo</label>
+    </div>
+
+    <button id="start" disabled="disabled">Start</button>
+
+    <figure>
+      <canvas id="levels" width="600" height="100"></canvas>
+      <figcaption>Levels</figcaption>
+    </figure>
+
+    <div id="log">
+      <h2>Log</h2>
+    </div>
+
+  </body>
+
+</html>
