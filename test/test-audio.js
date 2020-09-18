@@ -3,15 +3,17 @@ import Music from '../lib/music.mjs';
 import StaffCanvas from '../lib/staffCanvas.mjs';
 import NoteListener from '../lib/noteListener.mjs';
 
+import plotLevelsChart from './levels-chart.mjs';
+
 const dbg = window.dbg = new Debug();
 dbg.Music = Music;
 
 class TestSession {
 
-	constructor (audioStream, localEcho, levelsCanvas) {
+	constructor (audioStream, settings, levelsCanvas) {
 		dbg.log('Starting test');
 
-		this.localEcho = localEcho;
+		this.settings = settings;
 
 		this.levelsCanvas = levelsCanvas;
 
@@ -33,13 +35,18 @@ class TestSession {
 		window.requestAnimationFrame(this.onAnimFrame.bind(this));
 	}
 
+	setSoundDetection(trigger, release) {
+		this.settings.soundTrigger = trigger;
+		this.settings.soundRelease = release;
+	}
+
 	onAudioProcess(event) {
 		const data = event.inputBuffer.getChannelData(0);
 		dbg.event = event;
 		dbg.inputData = data;
 
 		const output = event.outputBuffer.getChannelData(0);
-		if (this.localEcho) {
+		if (this.settings.localEcho) {
 			for (let i = 0 ; i < data.length ; ++i)
 				output[i] = data[i];
 		}
@@ -68,55 +75,12 @@ class TestSession {
 		this.levelsRMSData.push(Math.sqrt(sumSquares / data.length));
 	}
 
-	plotLevelsData(data, color) {
-		const ctx = this.levelsCanvas.getContext('2d');
-		const width = this.levelsCanvas.width;
-		const height = this.levelsCanvas.height;
-
-		let x, startTime;
-		if (width > data.length) {
-			// stretch the data to fit the canvas
-			const scale = width / data.length;
-			startTime = 0;
-			x = (t) => t * scale;
-		}
-		else {
-			// fit in the most recent data without stretching
-			startTime = data.length - width;
-			x = (t) => t - startTime;
-		}
-
-		const y = (datum) => height - (height * datum);
-
-		ctx.strokeStyle = color;
-		ctx.beginPath();
-		ctx.moveTo(x(startTime), y(data[startTime]));
-
-		for (let t = startTime + 1 ; t < data.length ; ++t)
-			ctx.lineTo(x(t), y(data[t]));
-
-		ctx.stroke();
-	}
-
 	onAnimFrame() {
-		this.levelsCanvas.width = this.levelsCanvas.clientWidth;
-		this.levelsCanvas.height = this.levelsCanvas.clientHeight;
-		const ctx = this.levelsCanvas.getContext('2d');
-		const width = this.levelsCanvas.width;
-		const height = this.levelsCanvas.height;
-
-		ctx.clearRect(0, 0, width , height);
-		for (let i = 1 ; i < 10 ; ++i) {
-			ctx.strokeStyle = (i == 5) ? 'grey' : 'lightGrey';
-			const y = (height / 10) * i;
-			ctx.beginPath();
-			ctx.moveTo(0, y);
-			ctx.lineTo(width, y);
-			ctx.stroke();
-		}
-		this.plotLevelsData(this.levelsMeanData, 'green');
-		this.plotLevelsData(this.levelsRMSData, 'red');
-		this.plotLevelsData(this.levelsData, 'black');
+		plotLevelsChart(this.levelsCanvas,
+										this.settings,
+										[[this.levelsData, 'black'],
+										 [this.levelsRMSData, 'red'],
+										 [this.levelsMeanData, 'green']]);
 		window.requestAnimationFrame(this.onAnimFrame.bind(this));
 	}
 
@@ -125,31 +89,56 @@ class TestSession {
 $( () => {
 	dbg.setLogContainer($('#log'));
 
-	function startTest(audioStream) {
+	function startTest(audioStream, settings) {
 		$('#start').prop('disabled', true);
 
 		const localEchoCheckBox = $('#localEcho');
 
-		const testSession = new TestSession(audioStream, localEchoCheckBox[0].checked, $('#levels')[0]);
+		const testSession = new TestSession(audioStream, settings, $('#levels')[0]);
 		dbg.Test = testSession;
 
 		$('#settings').on('change', '#localEcho', function () {
-			testSession.localEcho = this.checked;
+			testSession.settings.localEcho = this.checked;
 		});
+
+		$('#soundRange').on('slide', function (event, ui) {
+			testSession.setSoundDetection(ui.values[1] / 100, ui.values[0] / 100);
+		});
+
 	}
 
-	function onStart() {
+	function onStart(settings) {
 		dbg.log('Requesting audio');
 
 		navigator.mediaDevices.getUserMedia( {audio: true} )
-			.then( (audioStream) => startTest(audioStream) )
+			.then( (audioStream) => startTest(audioStream, settings) )
 			.catch( (error) => dbg.error('getUserMedia error: ' + error) );
 	}
 
 	function init() {
+		const settings = {
+			localEcho: false,
+			soundTrigger: 0.2,
+			soundRelease: 0.1,
+		};
+
 		$('#start')
-			.click( onStart )
+			.click( () => onStart(settings) )
 			.prop('disabled', false);
+
+		$('#soundRelease').text(settings.soundRelease * 100);
+		$('#soundTrigger').text(settings.soundTrigger * 100);
+		$('#soundRange')
+			.slider({
+				range: true,
+				min: 0,
+				max: 100,
+				values: [settings.soundRelease * 100, settings.soundTrigger * 100],
+				slide: function(event, ui) {
+					$('#soundRelease').text(ui.values[0]);
+					$('#soundTrigger').text(ui.values[1]);
+				}
+			});
 	}
 
 	document.fonts.load('40pt Bravura').then(init);

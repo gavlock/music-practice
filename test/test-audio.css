@@ -1,3 +1,20 @@
+body {
+    max-width: 50em;
+    margin: 1em auto;
+}
+
+#settings {
+    border: thin solid grey;
+}
+
+#settings section {
+    margin: 1em;
+}
+
+#settings label {
+    font-weight: bold;
+}
+
 #log {
     border: thin solid grey;
 }

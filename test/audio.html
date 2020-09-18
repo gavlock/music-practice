@@ -3,8 +3,12 @@
   <head>
     <title>Test Audio - Music Practice</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="test-audio.css"/>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+
+    <link rel="stylesheet" type="text/css" href="test-audio.css"/>
     <script type="module" src="test-audio.js"></script>
   </head>
 
@@ -12,8 +16,18 @@
     <h1>Test Audio</h1>
 
     <div id="settings">
-      <input type="checkbox" id="localEcho"/>
-      <label for="localEcho">Local echo</label>
+      <section>
+	<input type="checkbox" id="localEcho"/>
+	<label for="localEcho">Local echo</label>
+      </section>
+
+      <section>
+	<label for="soundRange">Sound detection:</label>
+	Release = <span id="soundRelease"></span>%,
+	Trigger = <span id="soundTrigger"></span>%
+	<div id="soundRange"></div>
+      </section>
+
     </div>
 
     <button id="start" disabled="disabled">Start</button>
