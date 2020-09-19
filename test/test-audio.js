@@ -2,6 +2,7 @@ import Debug from '../lib/debug.mjs';
 import Music from '../lib/music.mjs';
 import StaffCanvas from '../lib/staffCanvas.mjs';
 import NoteListener from '../lib/noteListener.mjs';
+import Autocorrelate from '../lib/autocorrelate.mjs';
 
 import plotLevelsChart from './levels-chart.mjs';
 
@@ -19,16 +20,17 @@ class TestSession {
 
 		const AudioContext = window.AudioContext || window.webkitAudioContext;
 
-		this.sampleRate = 48000;
-		this.audioContext = new AudioContext( {sampleRate: this.sampleRate} );
+		this.audioContext = new AudioContext( {sampleRate: settings.sampleRate} );
 		this.micStream = this.audioContext.createMediaStreamSource(audioStream);
 		this.audioProcessor = this.audioContext.createScriptProcessor(1024, 1, 1);
 		this.micStream.connect(this.audioProcessor);
 		this.audioProcessor.connect(this.audioContext.destination);
 
-		this.levelsData = new Array(1024);
+		this.levelsData = new Array(settings.chunkSize);
 		this.levelsMeanData = new Array(this.levelsData.length);
 		this.levelsRMSData = new Array(this.levelsData.length);
+
+		this.autocorrelate = new Autocorrelate(settings.sampleRate, settings.timeWindow, settings.chunkSize);
 
 		this.audioProcessor.onaudioprocess = this.onAudioProcess.bind(this);
 
@@ -40,21 +42,7 @@ class TestSession {
 		this.settings.soundRelease = release;
 	}
 
-	onAudioProcess(event) {
-		const data = event.inputBuffer.getChannelData(0);
-		dbg.event = event;
-		dbg.inputData = data;
-
-		const output = event.outputBuffer.getChannelData(0);
-		if (this.settings.localEcho) {
-			for (let i = 0 ; i < data.length ; ++i)
-				output[i] = data[i];
-		}
-		else
-			output.fill(0);
-
-		//const max = Math.max(...data);
-
+	processLevels(data) {
 		let max = 0;
 		let sum = 0;
 		let sumSquares = 0;
@@ -75,12 +63,33 @@ class TestSession {
 		this.levelsRMSData.push(Math.sqrt(sumSquares / data.length));
 	}
 
+	processAutocorrelation(data) {
+		this.autocorrelate.addData(data);
+	}
+
+	onAudioProcess(event) {
+		const data = event.inputBuffer.getChannelData(0);
+
+		// conditionally, copy to output
+		const output = event.outputBuffer.getChannelData(0);
+		if (this.settings.localEcho) {
+			for (let i = 0 ; i < data.length ; ++i)
+				output[i] = data[i];
+		}
+		else
+			output.fill(0);
+
+		this.processLevels(data);
+		this.processAutocorrelation(data);
+	}
+
 	onAnimFrame() {
 		plotLevelsChart(this.levelsCanvas,
 										this.settings,
 										[[this.levelsData, 'black'],
 										 [this.levelsRMSData, 'red'],
 										 [this.levelsMeanData, 'green']]);
+
 		window.requestAnimationFrame(this.onAnimFrame.bind(this));
 	}
 
@@ -112,11 +121,24 @@ $( () => {
 
 		navigator.mediaDevices.getUserMedia( {audio: true} )
 			.then( (audioStream) => startTest(audioStream, settings) )
-			.catch( (error) => dbg.error('getUserMedia error: ' + error) );
+			.catch( (error) => dbg.error('getUserMedia/startTest error: ' + error) );
 	}
 
 	function init() {
+		const sampleRate = 48000;
+		const autoCorrelateMinPeriods = 3;
+		const samplesNeeded = Autocorrelate.samplesNeeded(autoCorrelateMinPeriods,
+																											Music.Note.lowest.frequency,
+																											sampleRate);
+		const timeWindow = samplesNeeded / sampleRate;
+
+		dbg.log(`${samplesNeeded} samples needed to autocorrelate ${autoCorrelateMinPeriods} periods`);
+		dbg.log(`Autocorrelate window needed = ${timeWindow.toFixed(2)} seconds`);
+
 		const settings = {
+			sampleRate: sampleRate,
+			timeWindow: timeWindow,
+			chunkSize: 1024,
 			localEcho: false,
 			soundTrigger: 0.2,
 			soundRelease: 0.1,
