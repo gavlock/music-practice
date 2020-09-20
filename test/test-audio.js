@@ -4,19 +4,21 @@ import StaffCanvas from '../lib/staffCanvas.mjs';
 import NoteListener from '../lib/noteListener.mjs';
 import Autocorrelate from '../lib/autocorrelate.mjs';
 
-import plotLevelsChart from './levels-chart.mjs';
+import {plotLevelsChart, plotCorrelationChart} from './levels-chart.mjs';
 
 const dbg = window.dbg = new Debug();
 dbg.Music = Music;
+dbg.Autocorrelate = Autocorrelate;
 
 class TestSession {
 
-	constructor (audioStream, settings, levelsCanvas) {
+	constructor (audioStream, settings, levelsCanvas, autocorrelationCanvas) {
 		dbg.log('Starting test');
 
 		this.settings = settings;
 
 		this.levelsCanvas = levelsCanvas;
+		this.autocorrelationCanvas = autocorrelationCanvas;
 
 		const AudioContext = window.AudioContext || window.webkitAudioContext;
 
@@ -31,6 +33,8 @@ class TestSession {
 		this.levelsRMSData = new Array(this.levelsData.length);
 
 		this.autocorrelate = new Autocorrelate(settings.sampleRate, settings.timeWindow, settings.chunkSize);
+
+		this.isSoundDetected = false;
 
 		this.audioProcessor.onaudioprocess = this.onAudioProcess.bind(this);
 
@@ -61,6 +65,11 @@ class TestSession {
 
 		this.levelsRMSData.shift();
 		this.levelsRMSData.push(Math.sqrt(sumSquares / data.length));
+
+		if ( max >= this.settings.soundTrigger)
+			this.isSoundDetected = true;
+		else if ( max < this.settings.soundRelease)
+			this.isSoundDetected = false;
 	}
 
 	processAutocorrelation(data) {
@@ -90,6 +99,18 @@ class TestSession {
 										 [this.levelsRMSData, 'red'],
 										 [this.levelsMeanData, 'green']]);
 
+		if (this.isSoundDetected && this.autocorrelate.isReady()) {
+			const correlation = this.autocorrelate.calcCorrelation(
+				Math.floor(this.autocorrelate.frequencyToLag(Music.Note.highest.frequency)),
+				Math.ceil(this.autocorrelate.frequencyToLag(Music.Note.lowest.frequency))
+				);
+			dbg.correlation = correlation;
+
+			plotCorrelationChart(this.autocorrelationCanvas,
+													 this.settings,
+													 correlation, 'black');
+		}
+
 		window.requestAnimationFrame(this.onAnimFrame.bind(this));
 	}
 
@@ -103,8 +124,8 @@ $( () => {
 
 		const localEchoCheckBox = $('#localEcho');
 
-		const testSession = new TestSession(audioStream, settings, $('#levels')[0]);
-		dbg.Test = testSession;
+		const testSession = new TestSession(audioStream, settings, $('#levels')[0], $('#autocorrelation')[0]);
+		dbg.test = testSession;
 
 		$('#settings').on('change', '#localEcho', function () {
 			testSession.settings.localEcho = this.checked;

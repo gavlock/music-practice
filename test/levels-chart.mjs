@@ -17,7 +17,7 @@ const drawHorizontalLine = (canvas, value, color) => {
 	ctx.stroke();
 };
 
-function calcPlotDetails(canvas, data) {
+function calcPlotDetails(canvas, data, yScale = 1, yOffset = 0) {
 	let x, startTime;
 	if (canvas.width > data.length) {
 		// stretch the data to fit the canvas
@@ -31,7 +31,7 @@ function calcPlotDetails(canvas, data) {
 		x = (t) => t - startTime;
 	}
 
-	const y = (datum) => canvas.height - (canvas.height * datum);
+	const y = (datum) => canvas.height - (canvas.height * (yOffset + (yScale * datum)));
 
 	return {
 		canvas: canvas,
@@ -78,7 +78,7 @@ function plotSoundDetected(plot, settings, data, color) {
 								 plot.x(block[1]) - plot.x(block[0]), plot.y(0));
 }
 
-export default function plotLevelsChart (canvas, settings, seriesCollection) {
+export function plotLevelsChart (canvas, settings, seriesCollection) {
 	clear(canvas);
 
 	const width = canvas.width;
@@ -98,4 +98,19 @@ export default function plotLevelsChart (canvas, settings, seriesCollection) {
 
 	for (let series of seriesCollection)
 		plotLine(plot, series[0], series[1]);
+}
+
+export function plotCorrelationChart (canvas, settings, correlation, color) {
+	clear(canvas);
+
+	const width = canvas.width;
+	const height = canvas.height;
+	const ctx = canvas.getContext('2d');
+	const plot = calcPlotDetails(canvas, correlation, correlation[0] ? (0.5 / correlation[0]) : 1, 0.5);
+
+	// draw tick lines
+	for (let i = 1 ; i < 10 ; ++i)
+		drawHorizontalLine(canvas, i / 10, (i == 5) ? 'grey' : 'lightGrey');
+
+	plotLine(plot, correlation, color);
 }
