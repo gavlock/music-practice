@@ -122,7 +122,7 @@ $( () => {
 	function startTest(audioStream, settings) {
 		$('#start').prop('disabled', true);
 
-		const localEchoCheckBox = $('#localEcho');
+		settings.localEcho = $('#localEcho')[0].checked;
 
 		const testSession = new TestSession(audioStream, settings, $('#levels')[0], $('#autocorrelation')[0]);
 		dbg.test = testSession;
