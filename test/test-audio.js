@@ -100,17 +100,14 @@ class TestSession {
 										 [this.levelsMeanData, 'green']]);
 
 		if (this.isSoundDetected && this.autocorrelate.isReady()) {
-			const [correlation, scale] = this.autocorrelate.calcCorrelation(
-				Math.floor(this.autocorrelate.frequencyToLag(Music.Note.highest.frequency)),
-				Math.ceil(this.autocorrelate.frequencyToLag(Music.Note.lowest.frequency))
-				);
-			dbg.correlation = correlation;
-			dbg.correlationScale = scale;
+			this.autocorrelate.calcCorrelation().then( ([correlation, scale]) => {
+				dbg.correlation = correlation;
 
-			plotCorrelationChart(this.autocorrelationCanvas,
-													 this.settings,
-													 correlation, 'black',
-													 scale);
+				plotCorrelationChart(this.autocorrelationCanvas,
+														 this.settings,
+														 correlation, 'black',
+														 1 / scale);
+			});
 		}
 
 		window.requestAnimationFrame(this.onAnimFrame.bind(this));

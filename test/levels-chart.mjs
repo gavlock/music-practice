@@ -106,7 +106,7 @@ export function plotCorrelationChart (canvas, settings, correlation, color, scal
 	const width = canvas.width;
 	const height = canvas.height;
 	const ctx = canvas.getContext('2d');
-	const plot = calcPlotDetails(canvas, correlation, scale, 0.5);
+	const plot = calcPlotDetails(canvas, correlation, scale / 2, 0.5);
 
 	// draw tick lines
 	for (let i = 1 ; i < 10 ; ++i)
