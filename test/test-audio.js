@@ -100,15 +100,17 @@ class TestSession {
 										 [this.levelsMeanData, 'green']]);
 
 		if (this.isSoundDetected && this.autocorrelate.isReady()) {
-			const correlation = this.autocorrelate.calcCorrelation(
+			const [correlation, scale] = this.autocorrelate.calcCorrelation(
 				Math.floor(this.autocorrelate.frequencyToLag(Music.Note.highest.frequency)),
 				Math.ceil(this.autocorrelate.frequencyToLag(Music.Note.lowest.frequency))
 				);
 			dbg.correlation = correlation;
+			dbg.correlationScale = scale;
 
 			plotCorrelationChart(this.autocorrelationCanvas,
 													 this.settings,
-													 correlation, 'black');
+													 correlation, 'black',
+													 scale);
 		}
 
 		window.requestAnimationFrame(this.onAnimFrame.bind(this));
